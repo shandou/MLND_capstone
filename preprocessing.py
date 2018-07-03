@@ -1,5 +1,6 @@
 import subprocess
 import itertools
+import pandas as pd
 
 
 def csv_randomized_downsamp(csv_in='', csv_out='', fraction=0.01):
@@ -43,6 +44,25 @@ def csv_randomized_downsamp(csv_in='', csv_out='', fraction=0.01):
     return (nlines_in, nlines_out)
 
 
+def csv_list_fields(csv_in=''):
+    '''
+    Returns field name of a csv file as a list of strings
+
+    Parameters
+    ------------
+    csv_in : str
+        Full path of input csv file
+
+    Returns
+    --------
+    fields : list
+        Field names as a list of strings
+    '''
+    return subprocess.check_output(
+        'head -1 {}'.format(csv_in), shell=True
+    ).decode('utf8').strip().split(',')
+
+
 def list_feature_combinations(feature_primary='', feature_other=[]):
     '''
     List all feature combinations of interests
@@ -57,9 +77,7 @@ def list_feature_combinations(feature_primary='', feature_other=[]):
     return feature_combinations
 
 
-def df_engineered(
-    df_in=None, feature_combinations=[], col_ref='is_attributed', csv_out=''
-):
+def df_engineered(df_in=None, feature_combinations=[], csv_out=''):
     '''
     Generate dataframe with engineered features
 
@@ -81,10 +99,32 @@ def df_engineered(
     '''
     df_out = df_in.copy()
     for combo in feature_combinations:
-        feature = 'count_{}'.format('_'.join(combo))
-        df_temp = df_in.groupby(combo).count()[col_ref].reset_index()
-        df_temp = df_temp.rename(columns={col_ref: feature})
-        df_out[feature] = df_in.merge(df_temp, how='outer', on=combo)[feature]
+        count_feature = 'count_{}'.format('_'.join(combo))
+        df_count = (
+            df_in.groupby(combo).count()['is_attributed'].reset_index().rename(
+                columns={'is_attributed': count_feature}
+            )
+        )
+
+        hr_mean_feature = 'mean_hr_{}'.format('_'.join(combo))
+        df_hour_mean = (
+            df_in.groupby(combo)['click_hour'].mean().reset_index().rename(
+                columns={'click_hour': hr_mean_feature}
+            )
+        )[hr_mean_feature]
+
+        hr_var_feature = 'var_hr_{}'.format('_'.join(combo))
+        df_hour_var = (
+            df_in.groupby(combo)['click_hour'].var().reset_index().rename(
+                columns={'click_hour': hr_var_feature}
+            )
+        )[hr_var_feature]
+
+        df_added = pd.concat(
+            [df_count, df_hour_mean, df_hour_var], axis='columns', join='inner'
+        )
+        df_out = df_out.merge(df_added, on=combo, how='left')
+        df_out.dropna(axis='columns', inplace=True)
     if csv_out:
         df_out.to_csv(csv_out, index=False)
     return df_out
