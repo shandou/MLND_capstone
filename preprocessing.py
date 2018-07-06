@@ -1,5 +1,4 @@
 import subprocess
-import itertools
 import numpy as np
 import pandas as pd
 
@@ -126,16 +125,19 @@ def mapper_label2riskfactor(df, col=''):
     prob_df['risk'] = prob_df.is_attributed / p_normalization
     return prob_df['risk'].to_dict()
 
+
 def df_rarelabel_imputer(
-    df, cols=[], thresh_percentage=1.0, replace_with=1e10
+    df_train, df_test, cols=[], thresh_percentage=1.0, replace_with=1e10
 ):
     '''
     Replace rare labels with dummy value. Critical for avoiding overfitting
 
     Parameters
     ------------
-    df : pandas.DataFrame
-        Input dataframe to be processed
+    df_train : pandas.DataFrame
+        Input training dataframe to be processed
+    df_test : pandas.DataFrame
+        Input testing dataframe to be processed
     cols : list
         list of column names to be processed
     thresh_percentage : float
@@ -146,39 +148,52 @@ def df_rarelabel_imputer(
 
     Returns
     ----------
-    df : pandas.DataFrame
-        Output dataframe whose rare labels have been imputed
+    df_train : pandas.DataFrame
+        Output training dataframe whose rare labels have been imputed
+    df_test : pandas.DataFrame
+        Output testing dataframe whose rare labels have been imputed
 
     Examples
     ---------
     Replace values in ['ip', 'app', 'channel'] that are only present in less
     than 1% of the observations with a large number 1e10
 
-    >>> df = impute_rare_label(
-    ... df, cols=['ip', 'app', 'channel'], thresh_percentage=1.0,
-    ... replace_with=1e10
+    >>> df_train, df_test = impute_rare_label(
+    ... df_train, df_test, cols=['ip', 'app', 'channel'],
+    ... thresh_percentage=1.0, replace_with=1e10
     ... )
     '''
     # Turn off SettingWithCopyWarning from pandas
     pd.options.mode.chained_assignment = None
     for col in cols:
         # Compute proportion of all value counts in percentage
-        df_temp = df[col].value_counts() / len(df) * 100.0
+        df_temp = df_train[col].value_counts() / len(df_train) * 100.0
         labels_rare = df_temp[df_temp <= thresh_percentage].index
         if len(labels_rare) > 0:
             # Impute rare labels; keep other labels intact
-            df[col] = np.where(
-                df[col].isin(labels_rare), replace_with, df[col]
+            df_train[col] = np.where(
+                df_train[col].isin(labels_rare), replace_with, df_train[col]
             )
-    return df
+            df_test[col] = np.where(
+                df_test[col].isin(labels_rare), replace_with, df_test[col]
+            )
+    return (df_train.astype(int), df_test.astype(int))
 
 
-def df_feature_grouper(df, cols=[], r=2):
-    feature_groups = itertools.combinations(cols, r)
-    for group in feature_groups:
-        name = 'count_{}'.format('-'.join(group))
-        df[name] = df.merge(
-            df.groupby(list(group)).count()['is_attributed'].reset_index(),
-            how='left', on=list(group)
-        )['is_attributed_y']
-    return df.fillna(0)
+def df_label2num_encoding(df_train, df_test, cols=[]):
+    # Turn off SettingWithCopyWarning from pandas
+    pd.options.mode.chained_assignment = None
+    for col in cols:
+        # risk factor features
+        mapper_risk = mapper_label2riskfactor(df_train, col=col)
+        df_train['risk_{}'.format(col)] = df_train[col].map(mapper_risk)
+        df_test['risk_{}'.format(col)] = df_test[col].map(mapper_risk)
+        # count features
+        mapper_count = mapper_label2count(df_train, col=col)
+        df_train['count_{}'.format(col)] = df_train[col].map(mapper_count)
+        df_test['count_{}'.format(col)] = df_test[col].map(mapper_count)
+        # Remove raw categorical features
+        df_train.drop(columns=[col], inplace=True)
+        df_test.drop(columns=[col], inplace=True)
+    return (df_train, df_test)
+

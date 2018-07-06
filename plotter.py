@@ -1,14 +1,20 @@
-def compare_hist(df, by='', hist_params={}, ax=None):
-    no_params = dict(facecolor='lightcoral', label='No download')
-    yes_params = dict(facecolor='green', label='Yes download')
-    ax.hist(
-        df[df['is_attributed'] == 0][by], **hist_params, **no_params
-    )
-    ax.hist(
-        df[df['is_attributed'] == 1][by], **hist_params, **yes_params
-    )
-    ax.legend(loc=4)
-    ax.set(yscale='log', ylabel='Count')
-    return ax
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 
+def plot_corrmat(df):
+    target_col = 'is_attributed'
+    cols_corr = [x for x in df.columns if x != target_col]
+    fig, ax = plt.subplots(nrows=1, ncols=2, sharey=True, figsize=(8, 4))
+    fig.tight_layout()
+    for i, axi in enumerate(ax):
+        corr_matrix = df[df['is_attributed'] == i][cols_corr].corr()
+        mask = np.zeros_like(corr_matrix, dtype=np.bool)
+        mask[np.triu_indices_from(mask)] = True
+        sns.heatmap(
+            corr_matrix, mask=mask, cmap='RdBu', vmin=-1, vmax=1, square=True,
+            linewidths=.5, annot=True, fmt='.1f', ax=axi, cbar=False
+        )
+        axi.set(title='is_attributed = {}'.format(i))
+    plt.show()
