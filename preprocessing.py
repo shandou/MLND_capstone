@@ -197,3 +197,14 @@ def df_label2num_encoding(df_train, df_test, cols=[]):
         df_test.drop(columns=[col], inplace=True)
     return (df_train, df_test)
 
+
+def df_to_Xy(df):
+    '''
+    Convert dataframe into ndarray for sklearn
+    '''
+    target_col = 'is_attributed'
+    cols = [x for x in df.columns if x != target_col]
+    # Replace nans with 0
+    df.fillna(0.0, inplace=True)
+    X, y = (df[cols], df[target_col])
+    return (X, y)
