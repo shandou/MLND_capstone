@@ -5,6 +5,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import (
     cross_val_score, RandomizedSearchCV, GridSearchCV
 )
+from sklearn.metrics import roc_auc_score
 
 
 def timer(method):
@@ -47,11 +48,15 @@ def gridsearch(pipe, param_grid, **cv_params):
 
 
 class Classifier():
+    '''
+    Classifer with grid-search hyperparameter tuning and cross validation
+    '''
     global metric
     metric = dict(scoring='roc_auc')
 
-    def __init__(self):
-        pass
+    def __init__(self, gridsearch=True):
+        self.gridsearch = gridsearch
+        return None
 
     @timer
     def assess(self, estimator, X, y, param_grid):
@@ -65,27 +70,43 @@ class Classifier():
         return (scores.mean(), scores.std())
 
     @timer
-    def fit(self, estimator, X, y, param_grid):
+    def fit(self, estimator, X, y, cv=5, param_grid={}):
         """Train selected model"""
         pipe = make_pipe(estimator)
-        gs = gridsearch(pipe, param_grid, cv=5, **metric)
-        __ = gs.fit(X, y)
-        self.best_pipe = gs.best_estimator_
-        best_estimator = (
-            gs.best_estimator_.named_steps['estimator']
-        )
-        if hasattr(best_estimator, 'feature_importances_'):
-            self.feature_importances = (
-                best_estimator.feature_importances_
+        if self.gridsearch:
+            gs = gridsearch(pipe, param_grid, cv=5, **metric)
+            __ = gs.fit(X, y)
+            best_estimator = (
+                gs.best_estimator_.named_steps['estimator']
             )
-        elif hasattr(best_estimator, 'coef_'):
-            self.feature_importances = (
-                best_estimator.coef_
-            )
-        self.best_params = gs.best_params_
-        self.score = gs.best_score_
+            self.pipe = gs.best_estimator_
+            if hasattr(best_estimator, 'feature_importances_'):
+                self.feature_importances = (
+                    best_estimator.feature_importances_
+                )
+            elif hasattr(best_estimator, 'coef_'):
+                self.feature_importances = (
+                    best_estimator.coef_
+                )
+            self.best_params = gs.best_params_
+            self.score = gs.best_score_
+        else:
+            self.pipe = pipe
+            if cv is not None:
+                scores = cross_val_score(self.pipe, X, y, cv=cv, **metric)
+                self.train_score = dict(
+                    cv_mean=scores.mean(), cv_std=scores.std()
+                )
+            __ = pipe.fit(X, y)
+            if not cv:
+                self.train_score = roc_auc_score(y, pipe.predict(X))
+            estimator = pipe.named_steps['estimator']
+            if hasattr(estimator, 'feature_importances_'):
+                self.feature_importances = estimator.feature_importances_
+            elif hasattr(estimator, 'coef_'):
+                self.feature_importances = estimator.coef_
         return None
 
     def predict(self, X):
         """Apply model to new data"""
-        return self.best_pipe.predict(X)
+        return self.pipe.predict(X)
