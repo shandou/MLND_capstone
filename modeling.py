@@ -1,11 +1,12 @@
 import time
 
-from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import (
     cross_val_score, RandomizedSearchCV, GridSearchCV
 )
 from sklearn.metrics import roc_auc_score
+from imblearn.over_sampling import RandomOverSampler
+from imblearn.pipeline import make_pipeline
 
 
 def timer(method):
@@ -21,11 +22,12 @@ def timer(method):
     return timed
 
 
-def make_pipe(estimator):
+def pipeline(estimator):
     """Model pipeline"""
-    return Pipeline([
-        ('scaler', StandardScaler()), ('estimator', estimator)
-    ])
+    return make_pipeline(
+        StandardScaler(), RandomOverSampler(random_state=42, ratio='minority'),
+        estimator
+    )
 
 
 def gridsearch(pipe, param_grid, **cv_params):
@@ -62,7 +64,7 @@ class Classifier():
     def assess(self, estimator, X, y, param_grid):
         """Performance assessments for selecting algorithms
         Using 5x2 nested cross-validation"""
-        pipe = make_pipe(estimator)
+        pipe = pipeline(estimator)
         # Inner loop: 2-fold CV for hyperparameter selection
         gs = gridsearch(pipe, param_grid, cv=2, **metric)
         # Outer loop: 5-fold CV for model training
@@ -72,12 +74,13 @@ class Classifier():
     @timer
     def fit(self, estimator, X, y, cv=5, param_grid={}):
         """Train selected model"""
-        pipe = make_pipe(estimator)
+        pipe = pipeline(estimator)
         if self.gridsearch:
             gs = gridsearch(pipe, param_grid, cv=5, **metric)
             __ = gs.fit(X, y)
+            estimator_name = list(gs.best_estimator_.named_steps.keys())[-1]
             best_estimator = (
-                gs.best_estimator_.named_steps['estimator']
+                gs.best_estimator_.named_steps[estimator_name]
             )
             self.pipe = gs.best_estimator_
             if hasattr(best_estimator, 'feature_importances_'):
@@ -100,11 +103,13 @@ class Classifier():
             __ = pipe.fit(X, y)
             if not cv:
                 self.train_score = roc_auc_score(y, pipe.predict(X))
-            estimator = pipe.named_steps['estimator']
+            estimator_name = list(pipe.named_steps.keys())[-1]
+            print(estimator_name)
+            estimator = pipe.named_steps[estimator_name]
             if hasattr(estimator, 'feature_importances_'):
                 self.feature_importances = estimator.feature_importances_
             elif hasattr(estimator, 'coef_'):
-                self.feature_importances = estimator.coef_
+                self.feature_importances = estimator.coef_.flatten()
         return None
 
     def predict(self, X):
