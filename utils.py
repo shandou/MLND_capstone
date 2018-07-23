@@ -93,6 +93,16 @@ def plot_precision_vs_recall(y_test, y_pred_proba, figsize=(5, 5), **kwargs):
     return None
 
 
+def df_check_cardinality(df):
+    '''
+    Utility for checking cardinality for input dataframe
+    '''
+    df_counts = pd.DataFrame()
+    df_counts['n_unique'] = df.nunique()
+    df_counts['n_unique (%)'] = 100 * df_counts['n_unique'] / len(df)
+    return df_counts.T
+
+
 def ml_performance_summary(train_score, test_score, model_name=''):
     '''
     Pack machine learning performance scores into dataframe
@@ -110,5 +120,3 @@ def ml_performance_summary(train_score, test_score, model_name=''):
         df['auc_train'] = train_score
     df['auc_test'] = test_score
     return df
-
-

@@ -1,7 +1,6 @@
 import subprocess
 import numpy as np
 import pandas as pd
-from imblearn.over_sampling import RandomOverSampler
 
 
 def csv_randomized_downsamp(csv_in='', csv_out='', fraction=0.01):
