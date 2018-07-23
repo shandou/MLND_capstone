@@ -114,4 +114,4 @@ class Classifier():
 
     def predict(self, X):
         """Apply model to new data"""
-        return self.pipe.predict(X)
+        return (self.pipe.predict(X), self.pipe.predict_proba(X))

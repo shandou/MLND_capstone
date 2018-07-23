@@ -2,6 +2,9 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+from sklearn.metrics import (
+    roc_curve, confusion_matrix, precision_recall_curve
+)
 
 
 def plot_corrmat(df, figsize=(8, 8)):
@@ -41,6 +44,53 @@ def plot_feature_importance(
     )
     plt.show()
     return (features_sorted, importance_sorted)
+
+
+def plot_confusion_matrix(y_test, y_pred, figsize=(), **kwargs):
+    cm = confusion_matrix(y_test, y_pred)
+    labels = np.array([
+        ['TN: {:d}'.format(cm[0][0]), 'FP: {:d}'.format(cm[0][1])],
+        ['FN: {:d}'.format(cm[1][0]), 'TP: {:d}'.format(cm[1][1])]
+    ])
+    df_cm = pd.DataFrame(
+        data=cm, columns=['predicted_0', 'predicted_1'],
+        index=['actual_0', 'actual_1']
+    )
+    fig, ax = plt.subplots(figsize=figsize)
+    sns.heatmap(
+        df_cm, annot=labels, cmap='Blues', square=True, linewidths=.5,
+        cbar=False, fmt=''
+
+    )
+    plt.show()
+
+
+def plot_roc_curve(y_test, y_pred_proba, figsize=(5, 5), **kwargs):
+    fpr, tpr, thresholds = roc_curve(y_test, y_pred_proba[:, 1])
+    fig, ax = plt.subplots(figsize=figsize)
+    ax.fill_between(fpr, tpr, 0, where=(tpr > 0), alpha=0.5, color='silver')
+    ax.plot(fpr, tpr, **kwargs)
+    ax.plot([0, 1], [0, 1], 'k--')
+    ax.set(
+        xlim=(0, 1), ylim=(0, 1), xlabel='False positive rate',
+        ylabel='True positive rate', title='ROC curve'
+    )
+    plt.show()
+    return None
+
+
+def plot_precision_vs_recall(y_test, y_pred_proba, figsize=(5, 5), **kwargs):
+    precisions, recalls, thresholds = precision_recall_curve(
+        y_test, y_pred_proba[:, 1]
+    )
+    fig, ax = plt.subplots(figsize=figsize)
+    ax.plot(recalls, precisions, **kwargs)
+    ax.set(
+        xlim=(0, 1), ylim=(0, 1), xlabel='Recall',
+        ylabel='Precision', title='Precision vs. recall curve'
+    )
+    plt.show()
+    return None
 
 
 def ml_performance_summary(train_score, test_score, model_name=''):
