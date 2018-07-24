@@ -47,6 +47,9 @@ def plot_feature_importance(
 
 
 def plot_confusion_matrix(y_test, y_pred, figsize=(), **kwargs):
+    '''
+    Plot confusion matrix and return matrix as dataframe
+    '''
     cm = confusion_matrix(y_test, y_pred)
     labels = np.array([
         ['TN: {:d}'.format(cm[0][0]), 'FP: {:d}'.format(cm[0][1])],
@@ -63,9 +66,15 @@ def plot_confusion_matrix(y_test, y_pred, figsize=(), **kwargs):
 
     )
     plt.show()
+    return df_cm
 
 
-def plot_roc_curve(y_test, y_pred_proba, figsize=(5, 5), **kwargs):
+def plot_roc_curve(
+    y_test, y_pred_proba, figsize=(5, 5), **kwargs
+):
+    '''
+    Plot ROC curve and returns value for further comparions/visualizations
+    '''
     fpr, tpr, thresholds = roc_curve(y_test, y_pred_proba[:, 1])
     fig, ax = plt.subplots(figsize=figsize)
     ax.fill_between(fpr, tpr, 0, where=(tpr > 0), alpha=0.5, color='silver')
@@ -76,10 +85,14 @@ def plot_roc_curve(y_test, y_pred_proba, figsize=(5, 5), **kwargs):
         ylabel='True positive rate', title='ROC curve'
     )
     plt.show()
-    return None
+    return np.vstack((fpr, tpr))
 
 
 def plot_precision_vs_recall(y_test, y_pred_proba, figsize=(5, 5), **kwargs):
+    '''
+    Plot precision-recall curve and return values for
+    further comparisons/visualizations
+    '''
     precisions, recalls, thresholds = precision_recall_curve(
         y_test, y_pred_proba[:, 1]
     )
@@ -90,7 +103,7 @@ def plot_precision_vs_recall(y_test, y_pred_proba, figsize=(5, 5), **kwargs):
         ylabel='Precision', title='Precision vs. recall curve'
     )
     plt.show()
-    return None
+    return np.vstack((recalls, precisions))
 
 
 def df_check_cardinality(df):

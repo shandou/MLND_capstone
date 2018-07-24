@@ -102,7 +102,11 @@ class Classifier():
                 )
             __ = pipe.fit(X, y)
             if not cv:
-                self.train_score = roc_auc_score(y, pipe.predict(X))
+                y_pred = pipe.predict(X)
+                if y_pred.ndim == 1:
+                    self.train_score = roc_auc_score(y, y_pred)
+                else:
+                    self.train_score = roc_auc_score(y, y_pred[:, 1] >= 0.5)
             estimator_name = list(pipe.named_steps.keys())[-1]
             print(estimator_name)
             estimator = pipe.named_steps[estimator_name]
@@ -110,8 +114,13 @@ class Classifier():
                 self.feature_importances = estimator.feature_importances_
             elif hasattr(estimator, 'coef_'):
                 self.feature_importances = estimator.coef_.flatten()
+            else:
+                self.feature_importances = None
         return None
 
     def predict(self, X):
         """Apply model to new data"""
-        return (self.pipe.predict(X), self.pipe.predict_proba(X))
+        return self.pipe.predict(X)
+
+    def predict_proba(self, X):
+        return self.pipe.predict_proba(X)
