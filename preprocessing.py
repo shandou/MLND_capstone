@@ -65,9 +65,8 @@ def csv_list_fields(csv_in=''):
 
 def mapper_label2count(df, col=''):
     '''
-    Replacing high-cardinality categorical labels with normalized risk factor
-    normalized risk factor = target mean of each label normalized by the
-    grand target mean of all labels
+    Replacing high-cardinality categorical labels with the counts of each of
+    thecategorical labels
     Mapping should be generated with training data, and then apply the
     resulting mapping to testing data (no testing data snooping!)
 
@@ -87,8 +86,8 @@ def mapper_label2count(df, col=''):
     ---------
     Process 'ip' field of the input dataframe
 
-    >>> mapper = preprocessing.mapper_label2riskfactor(df, col='ip')
-    >>> df[col + '_risk'] = df[col].map(mapper)
+    >>> mapper = preprocessing.mapper_label2count(df, col='ip')
+    >>> df['count_' + col] = df[col].map(mapper)
     '''
     return df[col].value_counts().to_dict()
 
@@ -118,7 +117,7 @@ def mapper_label2riskfactor(df, col=''):
     Process 'ip' field of the input dataframe
 
     >>> mapper = preprocessing.mapper_label2riskfactor(df, col='ip')
-    >>> df[col + '_risk'] = df[col].map(mapper)
+    >>> df['risk_' + col] = df[col].map(mapper)
     '''
     p_normalization = df['is_attributed'].mean()
     prob_df = pd.DataFrame(df.groupby([col])['is_attributed'].mean())
