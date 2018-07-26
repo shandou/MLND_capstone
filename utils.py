@@ -22,6 +22,31 @@ def plot_corrmat(df, figsize=(8, 8)):
     return None
 
 
+def plot_scores_vs_regparams(
+    regparams=None, scores_train=None, scores_test=None, figsize=(4, 4),
+    xscale='log', xlabel='', **kwargs
+):
+    fig, ax1 = plt.subplots(figsize=figsize)
+    ax1.plot(
+        regparams, scores_train, 'b.-', label='Traing score', lw=3, ms=10
+    )
+    ax1.plot(
+        regparams, scores_test, 'r.-', label='Testing score', lw=3, ms=10
+    )
+    ax1.legend()
+    ax1.set(ylim=(0.8, 1), xlabel=xlabel, ylabel='AUC score')
+    ax2 = ax1.twinx()
+    ax2.plot(
+        regparams, scores_train - scores_test, 'g.-', lw=3, ms=10, alpha=0.8
+    )
+    ax2.set_ylabel('AUC[train] - AUC[test]', color='g')
+    ax2.tick_params(colors='g')
+    if xscale is 'log':
+        plt.xscale('log')
+    plt.show()
+    return None
+
+
 def plot_feature_importance(
     model, feature_list=[], model_name='', figsize=(5, 5), **kwargs
 ):
