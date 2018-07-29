@@ -1,3 +1,6 @@
+'''
+modeling module is for machine learning
+'''
 import time
 
 from sklearn.preprocessing import StandardScaler
@@ -14,6 +17,9 @@ def timer(method):
     Timer decorator
     '''
     def timed(*args, **kw):
+        '''
+        Start and end timer
+        '''
         t_start = time.time()
         result = method(*args, **kw)
         t_elapsed = time.time() - t_start
@@ -23,7 +29,9 @@ def timer(method):
 
 
 def pipeline(estimator):
-    """Model pipeline"""
+    '''
+    Model pipeline
+    '''
     return make_pipeline(
         StandardScaler(), RandomOverSampler(random_state=42, ratio='minority'),
         estimator
@@ -31,14 +39,16 @@ def pipeline(estimator):
 
 
 def gridsearch(pipe, param_grid, **cv_params):
-    """Grid or randomized search for selecting hyperparameters"""
+    '''
+    Grid or randomized search for selecting hyperparameters
+    '''
     n_hyperparams = sum(len(v) for v in param_grid.values())
     print(
         'Size of hyperparameter space: n_hyperparams = {}'.format(
             n_hyperparams
         )
     )
-    if(n_hyperparams < 5):
+    if n_hyperparams < 5:
         print('Hyperparameter search with GridSearchCV')
         gs = GridSearchCV(pipe, param_grid, verbose=1, **cv_params)
     else:
@@ -62,8 +72,10 @@ class Classifier():
 
     @timer
     def assess(self, estimator, X, y, param_grid):
-        """Performance assessments for selecting algorithms
-        Using 5x2 nested cross-validation"""
+        '''
+        Performance assessments for selecting algorithms
+        Using 5x2 nested cross-validation
+        '''
         pipe = pipeline(estimator)
         # Inner loop: 2-fold CV for hyperparameter selection
         gs = gridsearch(pipe, param_grid, cv=2, **metric)
@@ -73,7 +85,9 @@ class Classifier():
 
     @timer
     def fit(self, estimator, X, y, cv=5, param_grid={}):
-        """Train selected model"""
+        '''
+        Train selected model
+        '''
         pipe = pipeline(estimator)
         if self.gridsearch:
             gs = gridsearch(pipe, param_grid, cv=5, **metric)
@@ -119,8 +133,13 @@ class Classifier():
         return None
 
     def predict(self, X):
-        """Apply model to new data"""
+        '''
+        Returns binary predictions
+        '''
         return self.pipe.predict(X)
 
     def predict_proba(self, X):
+        '''
+        Returns predicted class probabilities
+        '''
         return self.pipe.predict_proba(X)

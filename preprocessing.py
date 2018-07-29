@@ -1,3 +1,10 @@
+'''
+preprocessing module is for data preprocessing. Operations include:
+- Downsize
+- Rare label imputation
+- Categorical label encoding
+- Features matrix and target array generation
+'''
 import subprocess
 import numpy as np
 import pandas as pd
@@ -5,7 +12,7 @@ import pandas as pd
 
 def csv_randomized_downsamp(csv_in='', csv_out='', fraction=0.01):
     '''
-    Returns reduced csv file from raw input `csv_in`
+    Returns downsized csv file from raw input `csv_in`
 
     Parameters
     -----------
@@ -13,7 +20,7 @@ def csv_randomized_downsamp(csv_in='', csv_out='', fraction=0.01):
         Full path of input csv file to be downsampled
     csv_out : str
         Full path of output csv file stores downsampled data
-    fraction : float
+    fraction : float (0 to 1)
         Fraction of raw data to keep in `csv_out`
 
     Returns
@@ -29,9 +36,9 @@ def csv_randomized_downsamp(csv_in='', csv_out='', fraction=0.01):
 
     >>> import preprocessing
     >>> nlines_in, nlines_out = preprocessing.randomized_downsamp(
-            csv_in='./data/train.csv', csv_out='./data/train_sample.csv',
-            fraction=0.01
-        )
+    ... csv_in='./data/train.csv', csv_out='./data/train_sample.csv',
+    ... fraction=0.01
+    ... )
     '''
     result = subprocess.check_output('wc -l {}'.format(csv_in), shell=True)
     nlines_in = int(result.split()[0])
@@ -57,6 +64,14 @@ def csv_list_fields(csv_in=''):
     --------
     fields : list
         Field names as a list of strings
+
+    Examples
+    ---------
+    List all field names in csv file './data/train_sample.csv'
+
+    >>>fields_train = preprocessing.csv_list_fields(
+    ... csv_in='./data/train_sample.csv'
+    ... )
     '''
     return subprocess.check_output(
         'head -1 {}'.format(csv_in), shell=True
@@ -66,9 +81,9 @@ def csv_list_fields(csv_in=''):
 def mapper_label2count(df, col=''):
     '''
     Replacing high-cardinality categorical labels with the counts of each of
-    thecategorical labels
+    the categorical labels
     Mapping should be generated with training data, and then apply the
-    resulting mapping to testing data (no testing data snooping!)
+    resulting mapping to testing data (to avoid testing data snooping)
 
     Parameters
     ------------
@@ -80,7 +95,7 @@ def mapper_label2count(df, col=''):
     Returns
     ----------
     mapper : dict
-        Dictionary with mapping from labels to risk factor values
+        Dictionary with mapping from labels to counts
 
     Examples
     ---------
@@ -98,7 +113,7 @@ def mapper_label2riskfactor(df, col=''):
     normalized risk factor = target mean of each label normalized by the
     grand target mean of all labels
     Mapping should be generated with training data, and then apply the
-    resulting mapping to testing data (no testing data snooping!)
+    resulting mapping to testing data (to avoid testing data snooping)
 
     Parameters
     ------------
@@ -110,7 +125,7 @@ def mapper_label2riskfactor(df, col=''):
     Returns
     ----------
     mapper : dict
-        Dictionary with mapping from labels to risk factor values
+        Dictionary with mapping from labels to risk factors
 
     Examples
     ---------
@@ -126,7 +141,7 @@ def mapper_label2riskfactor(df, col=''):
 
 
 def df_rarelabel_imputer(
-    df_train, df_test, cols=[], thresh_percentage=1.0, replace_with=1e10
+        df_train, df_test, cols=[], thresh_percentage=1.0, replace_with=1e10
 ):
     '''
     Replace rare labels with dummy value. Critical for avoiding overfitting
@@ -180,6 +195,36 @@ def df_rarelabel_imputer(
 
 
 def df_label2num_encoding(df_train, df_test, cols=[]):
+    '''
+    Apply both counts and risk factor encoing to categorical labels and drop
+    the raw labels.
+
+    Parameters
+    ------------
+    df_train : pandas.DataFrame
+        Input training dataframe after rare label imputation
+    df_test : pandas.DataFrame
+        Input testing dataframe after rare label imputation
+    cols : list
+        List of strings specifying the column names that are to be encoded
+
+    Returns
+    ----------
+    df_train : pandas.DataFrame
+        Encoded training dataframe
+    df_test : pandas.DataFrame
+        Encoded testing dataframe
+
+    Examples
+    ---------
+    Encode categorical features ['ip', 'app', 'device', 'os', 'channel',
+    'click_hour']:
+
+    >>>df_train, df_test = preprocessing.df_label2num_encoding(
+    ... df_train, df_test,
+    ... cols=['ip', 'app', 'device', 'os', 'channel', 'click_hour']
+    ... )
+    '''
     # Turn off SettingWithCopyWarning from pandas
     pd.options.mode.chained_assignment = None
     for col in cols:
@@ -199,7 +244,33 @@ def df_label2num_encoding(df_train, df_test, cols=[]):
 
 def df_to_Xy(df, target_col='is_attributed', feature_cols=[]):
     '''
-    Convert dataframe into ndarray for sklearn
+    Extract features matrix X and target array y from input dataframe
+
+    Parameters
+    ------------
+    df : pandas.DataFrame
+        Input dataframe containing both features and targets
+    target_col : str
+        Column name of the target
+    feature_cols : list
+        List of column names used as features
+
+    Returns
+    ----------
+    X : np.ndarray
+        Features matrix with dimension of n_samples x n_features
+    y : np.ndarray
+        Target arrray with dimension of n_samples x 1 or 1 x n_samples
+
+    Examples
+    ---------
+    Extract X_train and y_train from df_train
+
+    >>>target_col = 'is_attributed'
+    >>>feature_cols = [x for x in df_train.columns if x != target_col]
+    >>>X_train, y_train = preprocessing.df_to_Xy(
+    ... df_train, target_col=target_col, feature_cols=feature_cols
+    ... )
     '''
     # Replace nans with 0
     df.fillna(0.0, inplace=True)

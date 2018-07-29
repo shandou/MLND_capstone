@@ -1,3 +1,6 @@
+'''
+utils module is for plotting and for packing results into data frames
+'''
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -8,6 +11,10 @@ from sklearn.metrics import (
 
 
 def plot_corrmat(df, figsize=(8, 8)):
+    '''
+    Plots Pearson's correlation coefficients for input dataframe
+    Only lower portion of the matrix is displayed
+    '''
     target_col = 'is_attributed'
     cols_corr = [x for x in df.columns if x != target_col]
     fig, ax = plt.subplots(figsize=figsize)
@@ -23,9 +30,12 @@ def plot_corrmat(df, figsize=(8, 8)):
 
 
 def plot_scores_vs_regparams(
-    regparams=None, scores_train=None, scores_test=None, figsize=(4, 4),
-    xscale='log', xlabel='', **kwargs
+        regparams=None, scores_train=None, scores_test=None, figsize=(4, 4),
+        xscale='log', xlabel='', **kwargs
 ):
+    '''
+    Plots metrics as a function of regularization parameters
+    '''
     fig, ax1 = plt.subplots(figsize=figsize)
     ax1.plot(
         regparams, scores_train, 'b.-', label='Traing score', lw=3, ms=10
@@ -48,8 +58,11 @@ def plot_scores_vs_regparams(
 
 
 def plot_feature_importance(
-    model, feature_list=[], model_name='', figsize=(5, 5), **kwargs
+        model, feature_list=[], model_name='', figsize=(5, 5), **kwargs
 ):
+    '''
+    Bar plots of feature importance ranking
+    '''
     features = np.array(feature_list).astype(str)
     index_sorted = np.argsort(abs(model.feature_importances))
     importance_sorted = model.feature_importances[index_sorted]
@@ -95,7 +108,7 @@ def plot_confusion_matrix(y_test, y_pred, figsize=(), **kwargs):
 
 
 def plot_roc_curve(
-    y_test, y_pred_proba, figsize=(5, 5), **kwargs
+        y_test, y_pred_proba, figsize=(5, 5), **kwargs
 ):
     '''
     Plot ROC curve and returns value for further comparions/visualizations
