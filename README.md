@@ -68,7 +68,10 @@ For more information about mlens, please visit [its webiste](http://ml-ensemble.
 The raw data `train.csv` can be directly download from [Kaggle](https://www.kaggle.com/c/talkingdata-adtracking-fraud-detection/data). Out of file size concerns, only downsized training data and the original testing data are included in this repo.
 	* `train_sample.csv`: 0.1% of the raw click records
 	* `train_sample_2.csv`: 0.2% of the raw click records
-	* `test.csv`: test data downloaded from Kaggle
+	* `test.csv`: First 10 lines of the orignal test data downloaded from Kaggle.
+	NOTE that `test.csv` provided by Kaggle is only used for checking data fields. In the actual implementation, testing data is instead a portion of `train_sample.csv` or `train_sample_2.csv`
+
+
 4. Proposals and reports:
 	* `proposal.pdf`: Proposal of the capstone project
 	* `proposal_review.pdf`: Comments from proposal review
