@@ -59,10 +59,10 @@ For more information about mlens, please visit [its webiste](http://ml-ensemble.
 	* `MLNDcapstone_shandou_main.ipynb`: Main workbook
 	* `MLNDcapstone_shandou_robustness.ipynb`: Companion workbook for models' robustness texts
 
-2. Python models:
-	* `preprocessing.py`: data processing
-	* `modeling.py`: modeling
-	* `utils.py`: miscellaneous tasks such as visualization and generating result summary tables
+2. Python models in `./customlib/`:
+	* `./customlib/preprocessing.py`: data processing
+	* `./customlib/modeling.py`: modeling
+	* `./customlib/utils.py`: miscellaneous tasks such as visualization and generating result summary tables
 
 3. Dataset:<br>
 The raw data `train.csv` can be directly download from [Kaggle](https://www.kaggle.com/c/talkingdata-adtracking-fraud-detection/data). Out of file size concerns, only downsized training data and the original testing data are included in this repo.
